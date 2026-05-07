@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cafpay | Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-shadow: rgba(0, 0, 0, 0.25);
+    --glass-input: rgba(255, 255, 255, 0.15);
+    --glass-input-focus: rgba(255, 255, 255, 0.28);
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.65);
+    --text-hint: rgba(255, 255, 255, 0.4);
+    --accent: rgba(255, 255, 255, 0.9);
+    --btn-bg: rgba(255, 255, 255, 0.22);
+    --btn-hover: rgba(255, 255, 255, 0.32);
+    --error: rgba(255, 100, 100, 0.9);
+    --success: rgba(100, 220, 150, 0.9);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #0a0a1a;
+    position: relative;
+  }
+
+  .bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    animation: drift linear infinite;
+  }
+
+  .orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, #4f8ef7, #1a3a8f);
+    top: -150px; left: -100px;
+    animation-duration: 18s;
+  }
+
+  .orb-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #a855f7, #5b21b6);
+    bottom: -100px; right: -80px;
+    animation-duration: 22s;
+    animation-direction: reverse;
+  }
+
+  .orb-3 {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, #06b6d4, #0e7490);
+    top: 40%; left: 55%;
+    animation-duration: 15s;
+  }
+
+  .orb-4 {
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, #f472b6, #9d174d);
+    top: 20%; right: 15%;
+    animation-duration: 25s;
+    animation-direction: reverse;
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(30px, -40px) scale(1.04); }
+    50% { transform: translate(-20px, 30px) scale(0.97); }
+    75% { transform: translate(40px, 20px) scale(1.02); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .card-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 400px;
+    padding: 0 20px;
+    animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    padding: 44px 40px 40px;
+    box-shadow:
+      0 8px 32px var(--glass-shadow),
+      0 1px 0 rgba(255,255,255,0.2) inset,
+      0 -1px 0 rgba(0,0,0,0.15) inset;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: 28px;
+  }
+
+  .logo-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    width: 52px; height: 52px;
+    background: var(--glass-input);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.25) inset;
+  }
+
+  .logo svg {
+    width: 26px; height: 26px;
+    fill: none;
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  h1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-weight: 300;
+    margin-bottom: 34px;
+    letter-spacing: 0.1px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 7px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 16px;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  .input-icon svg {
+    width: 16px; height: 16px;
+    fill: none;
+    stroke: white;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    height: 46px;
+    background: var(--glass-input);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 13px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    padding: 0 42px 0 42px;
+    outline: none;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 8px rgba(0,0,0,0.12);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder { color: var(--text-hint); }
+
+  input:focus {
+    background: var(--glass-input-focus);
+    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+
+  .toggle-pw {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.45;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toggle-pw:hover { opacity: 0.75; }
+  .toggle-pw svg {
+    width: 16px; height: 16px;
+    fill: none;
+    stroke: white;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .message {
+    font-size: 12.5px;
+    font-weight: 400;
+    text-align: center;
+    min-height: 18px;
+    margin: 12px 0 16px;
+    transition: all 0.25s;
+    letter-spacing: 0.1px;
+  }
+
+  .message.error { color: var(--error); }
+  .message.success { color: var(--success); }
+  .message.hidden { opacity: 0; }
+
+  .btn {
+    width: 100%;
+    height: 48px;
+    background: var(--btn-bg);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 4px 16px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--btn-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(0px) scale(0.99);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    display: none;
+  }
+
+  .btn.loading .spinner { display: block; }
+  .btn.loading .btn-text { opacity: 0; position: absolute; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.12);
+  }
+
+  .divider span {
+    font-size: 12px;
+    color: var(--text-hint);
+    font-weight: 400;
+    letter-spacing: 0.3px;
+  }
+
+  .footer-text {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--text-hint);
+    margin-top: 24px;
+  }
+
+  .footer-text a {
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .footer-text a:hover { color: var(--text-primary); }
+
+  .success-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 0;
+    animation: cardIn 0.5s ease both;
+  }
+
+  .success-icon {
+    width: 56px; height: 56px;
+    background: rgba(100, 220, 150, 0.15);
+    border: 1px solid rgba(100, 220, 150, 0.4);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .success-icon svg {
+    width: 24px; height: 24px;
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .success-state h2 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .success-state p {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+<div class="noise"></div>
+
+<div class="card-wrapper">
+  <div class="card">
+
+    <div class="logo-wrap">
+      <div class="logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C8.686 2 6 4.686 6 8c0 2.122 1.1 3.98 2.75 5.07L12 22l3.25-8.93C16.9 11.98 18 10.122 18 8c0-3.314-2.686-6-6-6z"/>
+          <circle cx="12" cy="8" r="2"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="login-form-section">
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in to your account</p>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"/></svg>
+          </span>
+          <input type="text" id="username" placeholder="Enter your username" autocomplete="username" spellcheck="false">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+          </span>
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+          <button class="toggle-pw" id="toggle-pw" type="button" aria-label="Toggle password visibility">
+            <svg id="eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="message hidden" id="msg"></div>
+
+      <button class="btn" id="login-btn" type="button">
+        <div class="spinner"></div>
+        <span class="btn-text">Sign In</span>
+      </button>
+
+      <div class="footer-text">
+        Don't have an account? <a href="#">Create one</a>
+      </div>
+    </div>
+
+    <div class="success-state" id="success-section">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>You're in!</h2>
+      <p id="welcome-msg">Welcome back.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hnvvvswmakydtajqtafh.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_hYOHtSn71XKPWGRYB1eQQQ_0ImZrAep';
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginBtn = document.getElementById('login-btn');
+  const usernameEl = document.getElementById('username');
+  const passwordEl = document.getElementById('password');
+  const msgEl = document.getElementById('msg');
+  const togglePw = document.getElementById('toggle-pw');
+  const eyeIcon = document.getElementById('eye-icon');
+  const formSection = document.getElementById('login-form-section');
+  const successSection = document.getElementById('success-section');
+  const welcomeMsg = document.getElementById('welcome-msg');
+
+  togglePw.addEventListener('click', () => {
+    const isHidden = passwordEl.type === 'password';
+    passwordEl.type = isHidden ? 'text' : 'password';
+    eyeIcon.innerHTML = isHidden
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>';
+  });
+
+  function showMsg(text, type) {
+    msgEl.textContent = text;
+    msgEl.className = 'message ' + type;
+  }
+
+  function clearMsg() {
+    msgEl.className = 'message hidden';
+    msgEl.textContent = '';
+  }
+
+  [usernameEl, passwordEl].forEach(el => {
+    el.addEventListener('input', clearMsg);
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  });
+
+  async function handleLogin() {
+    const username = usernameEl.value.trim();
+    const password = passwordEl.value;
+
+    if (!username || !password) {
+      showMsg('Please fill in both fields.', 'error');
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.classList.add('loading');
+    clearMsg();
+
+    try {
+      const { data, error } = await db
+        .from('users')
+        .select('username, role')
+        .eq('username', username)
+        .eq('password', password)
+        .maybeSingle();
+
+      if (error) {
+        showMsg('Something went wrong. Please try again.', 'error');
+        console.error(error);
+        return;
+      }
+
+      if (!data) {
+        showMsg('Incorrect username or password.', 'error');
+        return;
+      }
+
+      sessionStorage.setItem('username', data.username);
+      sessionStorage.setItem('role', data.role);
+
+      formSection.style.display = 'none';
+      welcomeMsg.textContent = `Welcome back, ${data.username}!`;
+      successSection.style.display = 'flex';
+
+      setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+
+    } catch (err) {
+      showMsg('Network error. Please try again.', 'error');
+      console.error(err);
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.classList.remove('loading');
+    }
+  }
+
+  loginBtn.addEventListener('click', handleLogin);
+</script>
+</body>
+</html>
