@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cafpay | Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --glass-bg: rgba(255,255,255,0.10);
+  --glass-border: rgba(255,255,255,0.22);
+  --glass-card: rgba(255,255,255,0.07);
+  --text-primary: rgba(255,255,255,0.95);
+  --text-secondary: rgba(255,255,255,0.58);
+  --text-hint: rgba(255,255,255,0.32);
+}
+html, body { height: 100%; font-family: 'Inter', sans-serif; background: #08080f; color: var(--text-primary); overflow-x: hidden; }
+
+.bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.42; animation: drift linear infinite; }
+.a1 { width:650px;height:650px;background:radial-gradient(circle,#f59e0b,#78350f);top:-180px;left:-130px;animation-duration:20s; }
+.a2 { width:420px;height:420px;background:radial-gradient(circle,#d97706,#451a03);bottom:-100px;right:-80px;animation-duration:27s;animation-direction:reverse; }
+.a3 { width:280px;height:280px;background:radial-gradient(circle,#fbbf24,#92400e);top:55%;left:62%;animation-duration:17s; }
+.u1 { width:650px;height:650px;background:radial-gradient(circle,#3b82f6,#1e3a8a);top:-180px;left:-130px;animation-duration:20s; }
+.u2 { width:420px;height:420px;background:radial-gradient(circle,#06b6d4,#164e63);bottom:-100px;right:-80px;animation-duration:27s;animation-direction:reverse; }
+.u3 { width:280px;height:280px;background:radial-gradient(circle,#818cf8,#312e81);top:55%;left:62%;animation-duration:17s; }
+@keyframes drift { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(32px,-42px) scale(1.04)} 50%{transform:translate(-22px,32px) scale(0.97)} 75%{transform:translate(42px,18px) scale(1.02)} 100%{transform:translate(0,0) scale(1)} }
+.noise { position:fixed;inset:0;z-index:1;opacity:.32;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); }
+
+nav { position:fixed;top:0;left:0;right:0;z-index:200;height:58px;background:rgba(255,255,255,0.06);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border-bottom:1px solid rgba(255,255,255,0.11);display:flex;align-items:center;justify-content:space-between;padding:0 28px; }
+.nav-brand { display:flex;align-items:center;gap:10px; }
+.nav-dot { width:8px;height:8px;border-radius:50%;animation:pulse 2.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.55;transform:scale(.82)} }
+.nav-brand span { font-size:15px;font-weight:500;letter-spacing:-.2px; }
+.nav-right { display:flex;align-items:center;gap:14px; }
+.role-badge { font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:20px;border:1px solid; }
+.logout-btn { background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;font-size:13px;padding:6px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px; }
+.logout-btn:hover { background:rgba(255,255,255,0.15);color:var(--text-primary); }
+.logout-btn svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+
+main { position:relative;z-index:10;padding:88px 28px 80px;max-width:680px;margin:0 auto;animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+.glass-card { background:var(--glass-card);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border:1px solid var(--glass-border);border-radius:20px;padding:26px 28px;position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.22),0 1px 0 rgba(255,255,255,0.14) inset; }
+.glass-card::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent); }
+
+.balance-card { margin-bottom:20px; }
+.balance-label { font-size:11px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--text-hint);margin-bottom:8px; }
+.balance-amount { font-size:44px;font-weight:600;letter-spacing:-1.5px;margin-bottom:4px; }
+.balance-sub { font-size:12.5px;color:var(--text-secondary); }
+.balance-icon { position:absolute;top:22px;right:24px;font-size:28px;opacity:.5; }
+
+.action-btn { width:100%;height:54px;border-radius:16px;border:1px solid;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(10px);position:relative;overflow:hidden;margin-top:16px; }
+.action-btn::before { content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent); }
+.action-btn:hover:not(:disabled) { transform:translateY(-2px); }
+.action-btn:active:not(:disabled) { transform:translateY(0) scale(.99); }
+.action-btn:disabled { opacity:.45;cursor:not-allowed; }
+.action-btn svg { width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+.btn-admin { background:rgba(251,191,36,0.18);border-color:rgba(251,191,36,0.4);color:#fde68a;box-shadow:0 4px 20px rgba(251,191,36,0.15); }
+.btn-admin:hover:not(:disabled) { background:rgba(251,191,36,0.26);box-shadow:0 8px 28px rgba(251,191,36,0.22); }
+.btn-user { background:rgba(99,179,237,0.18);border-color:rgba(99,179,237,0.4);color:#bfdbfe;box-shadow:0 4px 20px rgba(99,179,237,0.15); }
+.btn-user:hover:not(:disabled) { background:rgba(99,179,237,0.26);box-shadow:0 8px 28px rgba(99,179,237,0.22); }
+.btn-ghost { background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.14);color:var(--text-secondary); }
+.btn-ghost:hover:not(:disabled) { background:rgba(255,255,255,0.12);color:var(--text-primary); }
+
+.field { margin-bottom:14px; }
+.field label { display:block;font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:7px; }
+.glass-input { width:100%;height:48px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:13px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:20px;font-weight:500;padding:0 16px;outline:none;transition:all .2s;appearance:none;-webkit-appearance:none; }
+.glass-input:focus { background:rgba(255,255,255,0.16);border-color:rgba(255,255,255,0.4);box-shadow:0 0 0 3px rgba(255,255,255,0.08); }
+.glass-input::placeholder { color:var(--text-hint);font-size:15px;font-weight:400; }
+
+.modal-overlay { position:fixed;inset:0;z-index:300;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .25s; }
+.modal-overlay.open { opacity:1;pointer-events:all; }
+.modal-sheet { width:100%;max-width:520px;background:rgba(14,14,24,0.95);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.13);border-radius:28px 28px 0 0;padding:28px 28px 52px;transform:translateY(40px);transition:transform .3s cubic-bezier(.22,1,.36,1);position:relative;max-height:93vh;overflow-y:auto; }
+.modal-overlay.open .modal-sheet { transform:translateY(0); }
+.modal-handle { width:36px;height:4px;background:rgba(255,255,255,0.16);border-radius:2px;margin:0 auto 24px; }
+.modal-title { font-size:19px;font-weight:600;letter-spacing:-.3px;margin-bottom:6px; }
+.modal-sub { font-size:13px;color:var(--text-secondary);margin-bottom:24px;line-height:1.5; }
+.close-btn { position:absolute;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.14);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s; }
+.close-btn:hover { background:rgba(255,255,255,0.18);color:var(--text-primary); }
+
+.qr-wrapper { display:flex;flex-direction:column;align-items:center;gap:18px;margin-bottom:8px; }
+.qr-amount-label { font-size:30px;font-weight:600;letter-spacing:-.5px;color:#fde68a; }
+.qr-box { background:#fff;border-radius:16px;padding:14px;display:inline-flex;box-shadow:0 8px 32px rgba(0,0,0,0.35); }
+.timer-bar-wrap { width:100%;max-width:240px; }
+.timer-label { font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:6px; }
+.timer-bar { height:4px;border-radius:2px;background:rgba(255,255,255,0.1);overflow:hidden; }
+.timer-fill { height:100%;border-radius:2px;background:linear-gradient(90deg,#fbbf24,#f59e0b);transition:width 1s linear;width:100%; }
+.timer-fill.urgent { background:linear-gradient(90deg,#ef4444,#dc2626); }
+.qr-expired { text-align:center;padding:24px 0; }
+.qr-expired p { font-size:13.5px;color:var(--text-secondary);margin-top:10px;line-height:1.6; }
+
+.scanner-wrap { position:relative;width:100%;max-width:300px;margin:0 auto 4px; }
+.scanner-video { width:100%;border-radius:16px;object-fit:cover;display:block;aspect-ratio:1; }
+.scanner-frame { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none; }
+.scan-region { width:62%;aspect-ratio:1;border-radius:12px;position:relative; }
+.scan-region::before,.scan-region::after { content:'';position:absolute;width:22px;height:22px;border-color:rgba(255,255,255,0.92);border-style:solid; }
+.scan-region::before { top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0; }
+.scan-region::after { bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0; }
+.corner-tr,.corner-bl { position:absolute;width:22px;height:22px;border-color:rgba(255,255,255,0.92);border-style:solid; }
+.corner-tr { top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0; }
+.corner-bl { bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px; }
+.scan-line { position:absolute;left:6px;right:6px;height:2px;background:linear-gradient(90deg,transparent,rgba(99,179,237,0.9),transparent);border-radius:1px;animation:scanline 2s ease-in-out infinite; }
+@keyframes scanline { 0%{top:10%} 100%{top:86%} }
+.scanner-hint { text-align:center;font-size:12.5px;color:var(--text-secondary);margin-top:14px;margin-bottom:4px; }
+
+.confirm-card { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:16px;padding:24px;margin-bottom:18px;text-align:center; }
+.confirm-amount { font-size:40px;font-weight:600;letter-spacing:-1px;color:#bfdbfe;margin-bottom:6px; }
+.confirm-to { font-size:14px;color:var(--text-secondary); }
+.confirm-to strong { color:var(--text-primary); }
+.confirm-expiry { font-size:12px;color:var(--text-hint);margin-top:8px; }
+.confirm-expiry.warn { color:#fca5a5; }
+.balance-check { font-size:12.5px;color:var(--text-secondary);text-align:center;margin-bottom:18px; }
+.balance-check.insufficient { color:#fca5a5; }
+
+.success-wrap { text-align:center;padding:16px 0 8px; }
+.success-circle { width:72px;height:72px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;animation:pop .4s cubic-bezier(.22,1,.36,1); }
+@keyframes pop { from{transform:scale(.6);opacity:0} to{transform:scale(1);opacity:1} }
+.success-circle svg { width:32px;height:32px;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+.success-wrap h2 { font-size:20px;font-weight:600;margin-bottom:8px; }
+.success-wrap p { font-size:13.5px;color:var(--text-secondary);line-height:1.6; }
+
+.toast { position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);z-index:500;background:rgba(24,24,36,0.96);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:12px 22px;font-size:13.5px;font-weight:500;color:var(--text-primary);backdrop-filter:blur(20px);opacity:0;transition:all .3s;white-space:nowrap; }
+.toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+
+.profile-row { display:flex;align-items:center;gap:14px;margin-bottom:24px; }
+.avatar { width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;border:2px solid rgba(255,255,255,0.18);flex-shrink:0; }
+.profile-name { font-size:17px;font-weight:600; }
+.profile-sub { font-size:12px;color:var(--text-secondary);margin-top:2px; }
+
+#admin-view, #user-view { display:none; }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg-orbs"></div>
+<div class="noise"></div>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-dot" id="nav-dot"></div>
+    <span id="nav-title">Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <span class="role-badge" id="role-badge"></span>
+    <button class="logout-btn" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </div>
+</nav>
+
+<main>
+  <!-- ADMIN -->
+  <div id="admin-view">
+    <div class="profile-row">
+      <div class="avatar" style="background:rgba(251,191,36,0.15);color:#fbbf24" id="admin-avatar"></div>
+      <div>
+        <div class="profile-name" id="admin-name"></div>
+        <div class="profile-sub">Administrator</div>
+      </div>
+    </div>
+    <div class="glass-card balance-card">
+      <div class="balance-icon">💰</div>
+      <div class="balance-label">Your Balance</div>
+      <div class="balance-amount" id="admin-balance" style="color:#fde68a">₱—</div>
+      <div class="balance-sub">Philippine Peso</div>
+    </div>
+    <button class="action-btn btn-admin" onclick="openQRModal()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      Generate Payment QR
+    </button>
+  </div>
+
+  <!-- USER -->
+  <div id="user-view">
+    <div class="profile-row">
+      <div class="avatar" style="background:rgba(99,179,237,0.15);color:#63b3ed" id="user-avatar"></div>
+      <div>
+        <div class="profile-name" id="user-name"></div>
+        <div class="profile-sub">Member</div>
+      </div>
+    </div>
+    <div class="glass-card balance-card">
+      <div class="balance-icon">💳</div>
+      <div class="balance-label">Your Balance</div>
+      <div class="balance-amount" id="user-balance" style="color:#bfdbfe">₱—</div>
+      <div class="balance-sub">Philippine Peso</div>
+    </div>
+    <button class="action-btn btn-user" onclick="openScanModal()">
+      <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+      Scan QR to Pay
+    </button>
+  </div>
+</main>
+
+<!-- ══ ADMIN QR MODAL ══ -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeQRModal()">✕</button>
+
+    <div id="qr-step-input">
+      <div class="modal-title">Generate Payment QR</div>
+      <div class="modal-sub">Enter an amount. The QR will be valid for 5 minutes.</div>
+      <div class="field">
+        <label>Amount (₱)</label>
+        <input class="glass-input" type="number" id="qr-amount-input" placeholder="0.00" min="1" inputmode="decimal">
+      </div>
+      <button class="action-btn btn-admin" onclick="generateQR()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+        Generate QR Code
+      </button>
+    </div>
+
+    <div id="qr-step-show" style="display:none">
+      <div class="modal-title">Share this QR</div>
+      <div class="modal-sub">Show this to the user to scan and pay you.</div>
+      <div class="qr-wrapper">
+        <div class="qr-amount-label" id="qr-display-amount"></div>
+        <div class="qr-box" id="qr-box"></div>
+        <div class="timer-bar-wrap">
+          <div class="timer-label" id="timer-label">5:00 remaining</div>
+          <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+        </div>
+      </div>
+      <div id="qr-expired-msg" style="display:none" class="qr-expired">
+        <div style="font-size:36px">⏰</div>
+        <p>This QR has expired.<br>Generate a new one to receive payment.</p>
+        <button class="action-btn btn-admin" style="margin-top:16px" onclick="resetQRModal()">Generate New QR</button>
+      </div>
+    </div>
+
+    <div id="qr-step-success" style="display:none">
+      <div class="success-wrap">
+        <div class="success-circle" style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.32)">
+          <svg viewBox="0 0 24 24" stroke="#fbbf24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Payment Received!</h2>
+        <p id="admin-success-msg"></p>
+      </div>
+      <button class="action-btn btn-admin" style="margin-top:16px" onclick="closeQRModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ USER SCAN MODAL ══ -->
+<div class="modal-overlay" id="scan-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="close-btn" onclick="closeScanModal()">✕</button>
+
+    <div id="scan-step-camera">
+      <div class="modal-title">Scan QR Code</div>
+      <div class="modal-sub">Point your back camera at the admin's QR code.</div>
+      <div class="scanner-wrap">
+        <video id="scan-video" class="scanner-video" autoplay playsinline muted></video>
+        <canvas id="scan-canvas" style="display:none"></canvas>
+        <div class="scanner-frame">
+          <div class="scan-region">
+            <div class="corner-tr"></div>
+            <div class="corner-bl"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+      <div class="scanner-hint" id="scan-hint">Align the QR code within the frame</div>
+    </div>
+
+    <div id="scan-step-confirm" style="display:none">
+      <div class="modal-title">Confirm Payment</div>
+      <div class="modal-sub">Review the details before confirming.</div>
+      <div class="confirm-card">
+        <div class="confirm-amount" id="confirm-amount"></div>
+        <div class="confirm-to">Sending to: <strong id="confirm-admin"></strong></div>
+        <div class="confirm-expiry" id="confirm-expiry"></div>
+      </div>
+      <div class="balance-check" id="confirm-balance-check"></div>
+      <button class="action-btn btn-user" id="confirm-btn" onclick="confirmPayment()">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Confirm Payment
+      </button>
+      <button class="action-btn btn-ghost" style="margin-top:10px" onclick="retryScanner()">Scan Again</button>
+    </div>
+
+    <div id="scan-step-success" style="display:none">
+      <div class="success-wrap">
+        <div class="success-circle" style="background:rgba(99,179,237,0.15);border:1px solid rgba(99,179,237,0.32)">
+          <svg viewBox="0 0 24 24" stroke="#63b3ed"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Payment Sent!</h2>
+        <p id="user-success-msg"></p>
+      </div>
+      <button class="action-btn btn-user" style="margin-top:16px" onclick="closeScanModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hnvvvswmakydtajqtafh.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hYOHtSn71XKPWGRYB1eQQQ_0ImZrAep';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const username = sessionStorage.getItem('username');
+const role = sessionStorage.getItem('role');
+if (!username || !role) { window.location.href = 'login.html'; }
+
+const isAdmin = role === 'admin';
+let currentBalance = 0;
+let qrTimerInterval = null;
+let qrExpiresAt = null;
+let adminPollInterval = null;
+let cameraStream = null;
+let scanAnimFrame = null;
+let scannedPayload = null;
+
+// ── FORMAT ────────────────────────────────────────────────────────────
+function fmt(n) {
+  return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showToast(msg, ms = 3200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── SETUP VIEWS ───────────────────────────────────────────────────────
+document.getElementById('bg-orbs').innerHTML = isAdmin
+  ? '<div class="orb a1"></div><div class="orb a2"></div><div class="orb a3"></div>'
+  : '<div class="orb u1"></div><div class="orb u2"></div><div class="orb u3"></div>';
+
+const navDot = document.getElementById('nav-dot');
+const roleBadge = document.getElementById('role-badge');
+
+if (isAdmin) {
+  navDot.style.background = '#fbbf24';
+  roleBadge.textContent = 'Admin';
+  roleBadge.style.cssText = 'background:rgba(251,191,36,0.14);border-color:rgba(251,191,36,0.4);color:#fbbf24;font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:20px;border:1px solid;';
+  document.getElementById('admin-view').style.display = 'block';
+  document.getElementById('admin-avatar').textContent = username.charAt(0).toUpperCase();
+  document.getElementById('admin-name').textContent = username;
+} else {
+  navDot.style.background = '#63b3ed';
+  roleBadge.textContent = 'User';
+  roleBadge.style.cssText = 'background:rgba(99,179,237,0.14);border-color:rgba(99,179,237,0.4);color:#63b3ed;font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:4px 12px;border-radius:20px;border:1px solid;';
+  document.getElementById('user-view').style.display = 'block';
+  document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+  document.getElementById('user-name').textContent = username;
+}
+
+// ── LOAD BALANCE ──────────────────────────────────────────────────────
+async function loadBalance() {
+  const { data } = await db.from('users').select('balance').eq('username', username).maybeSingle();
+  if (data !== null && data !== undefined) {
+    currentBalance = Number(data.balance);
+    document.getElementById(isAdmin ? 'admin-balance' : 'user-balance').textContent = fmt(currentBalance);
+  }
+}
+loadBalance();
+
+function logout() { stopCamera(); sessionStorage.clear(); window.location.href = 'login.html'; }
+
+// ══════════════════════════════════════════════════════════════════════
+// ADMIN: GENERATE QR
+// ══════════════════════════════════════════════════════════════════════
+function openQRModal() {
+  resetQRModal();
+  document.getElementById('qr-modal').classList.add('open');
+}
+
+function closeQRModal() {
+  document.getElementById('qr-modal').classList.remove('open');
+  clearInterval(qrTimerInterval);
+  clearInterval(adminPollInterval);
+  setTimeout(resetQRModal, 400);
+  loadBalance();
+}
+
+function resetQRModal() {
+  clearInterval(qrTimerInterval);
+  clearInterval(adminPollInterval);
+  document.getElementById('qr-step-input').style.display = 'block';
+  document.getElementById('qr-step-show').style.display = 'none';
+  document.getElementById('qr-step-success').style.display = 'none';
+  document.getElementById('qr-expired-msg').style.display = 'none';
+  document.getElementById('qr-box').innerHTML = '';
+  document.getElementById('qr-amount-input').value = '';
+  const fill = document.getElementById('timer-fill');
+  if (fill) { fill.style.width = '100%'; fill.classList.remove('urgent'); }
+}
+
+function generateQR() {
+  const raw = document.getElementById('qr-amount-input').value;
+  const amount = parseFloat(raw);
+  if (!amount || amount <= 0) { showToast('Please enter a valid amount'); return; }
+
+  const expiresAt = Date.now() + 5 * 60 * 1000;
+  const payload = JSON.stringify({ admin: username, amount, expiresAt });
+
+  document.getElementById('qr-step-input').style.display = 'none';
+  document.getElementById('qr-step-show').style.display = 'block';
+  document.getElementById('qr-display-amount').textContent = fmt(amount);
+  document.getElementById('qr-box').innerHTML = '';
+
+  new QRCode(document.getElementById('qr-box'), {
+    text: payload, width: 220, height: 220,
+    colorDark: '#000000', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  qrExpiresAt = expiresAt;
+  startQRTimer();
+  startAdminPoll(amount);
+}
+
+function startQRTimer() {
+  clearInterval(qrTimerInterval);
+  const total = 5 * 60 * 1000;
+  const fill = document.getElementById('timer-fill');
+  const label = document.getElementById('timer-label');
+  fill.style.width = '100%';
+
+  qrTimerInterval = setInterval(() => {
+    const remaining = qrExpiresAt - Date.now();
+    if (remaining <= 0) {
+      clearInterval(qrTimerInterval);
+      clearInterval(adminPollInterval);
+      fill.style.width = '0%';
+      label.textContent = 'Expired';
+      document.getElementById('qr-box').style.opacity = '0.25';
+      document.getElementById('qr-expired-msg').style.display = 'block';
+      return;
+    }
+    const pct = (remaining / total) * 100;
+    fill.style.width = pct + '%';
+    if (pct < 20) fill.classList.add('urgent'); else fill.classList.remove('urgent');
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    label.textContent = `${mins}:${secs.toString().padStart(2, '0')} remaining`;
+  }, 1000);
+}
+
+function startAdminPoll(expectedAmount) {
+  clearInterval(adminPollInterval);
+  let lastBalance = currentBalance;
+
+  adminPollInterval = setInterval(async () => {
+    if (Date.now() > qrExpiresAt) { clearInterval(adminPollInterval); return; }
+    const { data } = await db.from('users').select('balance').eq('username', username).maybeSingle();
+    if (data && Number(data.balance) > lastBalance) {
+      const received = Number(data.balance) - lastBalance;
+      currentBalance = Number(data.balance);
+      lastBalance = currentBalance;
+      document.getElementById('admin-balance').textContent = fmt(currentBalance);
+      clearInterval(qrTimerInterval);
+      clearInterval(adminPollInterval);
+      document.getElementById('qr-step-show').style.display = 'none';
+      document.getElementById('qr-step-success').style.display = 'block';
+      document.getElementById('admin-success-msg').textContent =
+        `You received ${fmt(received)}. New balance: ${fmt(currentBalance)}`;
+    }
+  }, 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// USER: SCAN QR
+// ══════════════════════════════════════════════════════════════════════
+function openScanModal() {
+  document.getElementById('scan-step-camera').style.display = 'block';
+  document.getElementById('scan-step-confirm').style.display = 'none';
+  document.getElementById('scan-step-success').style.display = 'none';
+  document.getElementById('scan-modal').classList.add('open');
+  startCamera();
+}
+
+function closeScanModal() {
+  document.getElementById('scan-modal').classList.remove('open');
+  stopCamera();
+  scannedPayload = null;
+  loadBalance();
+}
+
+function retryScanner() {
+  scannedPayload = null;
+  document.getElementById('scan-step-confirm').style.display = 'none';
+  document.getElementById('scan-step-camera').style.display = 'block';
+  document.getElementById('confirm-btn').disabled = false;
+  document.getElementById('confirm-btn').style.opacity = '';
+  startCamera();
+}
+
+async function startCamera() {
+  stopCamera();
+  document.getElementById('scan-hint').textContent = 'Starting camera…';
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    const video = document.getElementById('scan-video');
+    video.srcObject = cameraStream;
+    video.onloadedmetadata = () => {
+      video.play();
+      document.getElementById('scan-hint').textContent = 'Align the QR code within the frame';
+      scanAnimFrame = requestAnimationFrame(scanFrame);
+    };
+  } catch (e) {
+    document.getElementById('scan-hint').textContent = 'Camera access denied — please allow camera in browser settings.';
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+}
+
+function scanFrame() {
+  const video = document.getElementById('scan-video');
+  if (!video || !video.videoWidth) { scanAnimFrame = requestAnimationFrame(scanFrame); return; }
+  const canvas = document.getElementById('scan-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+  if (code) {
+    stopCamera();
+    processQRCode(code.data);
+    return;
+  }
+  scanAnimFrame = requestAnimationFrame(scanFrame);
+}
+
+function processQRCode(raw) {
+  try {
+    const data = JSON.parse(raw);
+    if (!data.admin || !data.amount || !data.expiresAt) { showToast('Invalid QR code'); retryScanner(); return; }
+    scannedPayload = data;
+    const remaining = data.expiresAt - Date.now();
+
+    document.getElementById('scan-step-camera').style.display = 'none';
+    document.getElementById('scan-step-confirm').style.display = 'block';
+    document.getElementById('confirm-amount').textContent = fmt(data.amount);
+    document.getElementById('confirm-admin').textContent = data.admin;
+
+    const btn = document.getElementById('confirm-btn');
+    let blocked = false;
+
+    const expiryEl = document.getElementById('confirm-expiry');
+    if (remaining <= 0) {
+      expiryEl.textContent = '⚠️ This QR code has already expired.';
+      expiryEl.className = 'confirm-expiry warn';
+      blocked = true;
+    } else {
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      expiryEl.textContent = `⏱ Valid for ${mins}:${secs.toString().padStart(2, '0')} more`;
+      expiryEl.className = remaining < 60000 ? 'confirm-expiry warn' : 'confirm-expiry';
+    }
+
+    const balEl = document.getElementById('confirm-balance-check');
+    if (data.amount > currentBalance) {
+      balEl.innerHTML = `⚠️ Insufficient balance — you have <strong>${fmt(currentBalance)}</strong>.`;
+      balEl.className = 'balance-check insufficient';
+      blocked = true;
+    } else {
+      balEl.innerHTML = `Your current balance: <strong>${fmt(currentBalance)}</strong>`;
+      balEl.className = 'balance-check';
+    }
+
+    btn.disabled = blocked;
+    btn.style.opacity = blocked ? '0.4' : '';
+  } catch (e) {
+    showToast('Could not read QR code'); retryScanner();
+  }
+}
+
+async function confirmPayment() {
+  if (!scannedPayload) return;
+  const { admin, amount, expiresAt } = scannedPayload;
+  if (Date.now() > expiresAt) { showToast('QR code has expired.'); return; }
+  if (amount > currentBalance) { showToast('Insufficient balance.'); return; }
+
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="animation:spin .65s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-opacity=".3"/><path d="M21 12a9 9 0 00-9-9"/></svg> Processing…';
+
+  try {
+    const newUserBal = currentBalance - amount;
+    const { error: e1 } = await db.from('users').update({ balance: newUserBal }).eq('username', username);
+    if (e1) throw e1;
+
+    const { data: adminData, error: e2 } = await db.from('users').select('balance').eq('username', admin).maybeSingle();
+    if (e2) throw e2;
+    const newAdminBal = (Number(adminData?.balance) || 0) + amount;
+    const { error: e3 } = await db.from('users').update({ balance: newAdminBal }).eq('username', admin);
+    if (e3) throw e3;
+
+    currentBalance = newUserBal;
+    document.getElementById('user-balance').textContent = fmt(currentBalance);
+    document.getElementById('scan-step-confirm').style.display = 'none';
+    document.getElementById('scan-step-success').style.display = 'block';
+    document.getElementById('user-success-msg').textContent =
+      `${fmt(amount)} sent to ${admin}. Your new balance: ${fmt(newUserBal)}`;
+  } catch (err) {
+    console.error(err);
+    showToast('Payment failed. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Confirm Payment';
+  }
+}
+</script>
+</body>
+</html>
